@@ -21,13 +21,21 @@ _G.HitboxTransparency = 0.5
 _G.OriginalSizes = {}
 _G.OriginalTransparency = {}
 _G.OriginalHitboxParts = {}
+
 _G.CustomHitboxParts = {}
 _G.PlayerHitboxShowEnabled = false
 _G.PlayerHitboxTransparency = 0.5
+
 _G.RemoveAnimationsEnabled = false
+
 _G.JumpPowerMultiplier = 1
+
 _G.PlayerDirectionEnabled = false
 _G.DirectionLines = {}
+
+_G.JumpingIndicatorEnabled = false
+_G.JumpingIndicators = {}
+_G.JumpingIndicatorSize = 50 -- Default size for GUI
 
 -- Create the main window
 local Window = Library:CreateWindow({
@@ -217,6 +225,12 @@ local HitboxToggle = HitboxSection:CreateToggle("HitboxToggle", {
          resetAllHitboxes()
       end
    end,
+}):CreateKeypicker("KeypickerSync", {
+	Keybind = Enum.KeyCode.G,
+	SyncToggleState = true,
+	Callback = function(Value)
+		print("Keypicker With Sync State:", Value)
+	end,
 })
 
 -- Add a slider for hitbox size
@@ -304,6 +318,12 @@ local PlayerHitboxShowToggle = PlayerHitboxSection:CreateToggle("PlayerHitboxSho
          end)
       end
    end,
+}):CreateKeypicker("KeypickerSync", {
+	Keybind = Enum.KeyCode.H,
+	SyncToggleState = true,
+	Callback = function(Value)
+		print("Keypicker With Sync State:", Value)
+	end,
 })
 
 -- Add a slider for player hitbox transparency
@@ -347,6 +367,12 @@ local CharacterRotationToggle = CharacterRotationSection:CreateToggle("Character
          end
       end
    end,
+}):CreateKeypicker("KeypickerSync", {
+	Keybind = Enum.KeyCode.J,
+	SyncToggleState = true,
+	Callback = function(Value)
+		print("Keypicker With Sync State:", Value)
+	end,
 })
 
 -- Add a section for Animation Removal
@@ -386,6 +412,12 @@ local AnimationRemovalToggle = AnimationRemovalSection:CreateToggle("AnimationRe
          end)
       end
    end,
+}):CreateKeypicker("KeypickerSync", {
+	Keybind = Enum.KeyCode.K,
+	SyncToggleState = true,
+	Callback = function(Value)
+		print("Keypicker With Sync State:", Value)
+	end,
 })
 
 -- Add a section for JumpPower
@@ -532,6 +564,12 @@ local PlayerDirectionToggle = PlayerDirectionSection:CreateToggle("PlayerDirecti
          end)
       end
    end,
+}):CreateKeypicker("KeypickerSync", {
+	Keybind = Enum.KeyCode.L,
+	SyncToggleState = true,
+	Callback = function(Value)
+		print("Keypicker With Sync State:", Value)
+	end,
 })
 
 -- Add toggle for showing same team players
@@ -599,6 +637,147 @@ local DirectionLengthSlider = PlayerDirectionSection:CreateSlider("DirectionLeng
                -- Update the reference
                _G.DirectionLines[playerName] = newLine
             end
+         end
+      end
+   end,
+})
+
+-- Add a section for Player Direction Visualization
+local JumpingIndicator = MainTab:CreateSection("Jumping Indicator")
+
+-- Add toggle for jumping indicator
+local JumpingIndicatorToggle = JumpingIndicator:CreateToggle("JumpingIndicatorToggle", {
+   Title = "Show Jumping Indicator",
+   Description = "Shows visual indicator when players are jumping",
+   Default = false,
+   Callback = function(Value)
+      _G.JumpingIndicatorEnabled = Value
+      
+      -- Clean up existing jumping indicators
+      for _, indicator in pairs(_G.JumpingIndicators) do
+         if indicator and indicator.Parent then
+            indicator:Destroy()
+         end
+      end
+      _G.JumpingIndicators = {}
+      
+      if Value then
+         -- Start the jumping indicator loop
+         spawn(function()
+            while _G.JumpingIndicatorEnabled do
+               -- Remove indicators for players who left
+               for playerName, indicator in pairs(_G.JumpingIndicators) do
+                  local playerStillExists = false
+                  for _, p in pairs(Players:GetPlayers()) do
+                     if p.Name == playerName then
+                        playerStillExists = true
+                        break
+                     end
+                  end
+                  
+                  if not playerStillExists and indicator and indicator.Parent then
+                     indicator:Destroy()
+                     _G.JumpingIndicators[playerName] = nil
+                  end
+               end
+               
+               -- Check jumping status for all players
+               for _, p in pairs(Players:GetPlayers()) do
+                  if p.Character and p.Character:FindFirstChild("Head") then
+                     local character = p.Character
+                     local head = character.Head
+                     
+                     -- Check if player is jumping by looking at workspace attributes
+                     local playerInWorkspace = workspace:FindFirstChild(p.Name)
+                     local isJumping = false
+                     
+                     if playerInWorkspace and playerInWorkspace:GetAttribute("Jumping") then
+                        isJumping = playerInWorkspace:GetAttribute("Jumping")
+                     end
+                     
+                     if isJumping then
+                        -- Create or update jumping indicator using GUI
+                        if not _G.JumpingIndicators[p.Name] or not _G.JumpingIndicators[p.Name].Parent then
+                           -- Create BillboardGui for the indicator
+                           local billboardGui = Instance.new("BillboardGui")
+                           billboardGui.Name = "JumpingIndicator_" .. p.Name
+                           billboardGui.Size = UDim2.new(0, _G.JumpingIndicatorSize, 0, _G.JumpingIndicatorSize)
+                           billboardGui.StudsOffset = Vector3.new(0, 3, 0)
+                           billboardGui.Adornee = head
+                           billboardGui.Parent = head
+                           
+                           -- Create the visual indicator (Frame with circle)
+                           local indicator = Instance.new("Frame")
+                           indicator.Size = UDim2.new(1, 0, 1, 0)
+                           indicator.BackgroundColor3 = Color3.fromRGB(255, 255, 0) -- Yellow
+                           indicator.BackgroundTransparency = 0.3
+                           indicator.BorderSizePixel = 0
+                           indicator.Parent = billboardGui
+                           
+                           -- Make it circular
+                           local corner = Instance.new("UICorner")
+                           corner.CornerRadius = UDim.new(0.5, 0)
+                           corner.Parent = indicator
+                           
+                           -- Add pulsing animation
+                           local pulseIn = game:GetService("TweenService"):Create(
+                              indicator,
+                              TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+                              {Size = UDim2.new(1.2, 0, 1.2, 0)}
+                           )
+                           local pulseOut = game:GetService("TweenService"):Create(
+                              indicator,
+                              TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+                              {Size = UDim2.new(1, 0, 1, 0)}
+                           )
+                           
+                           -- Chain the animations
+                           pulseIn.Completed:Connect(function()
+                              if indicator.Parent then
+                                 pulseOut:Play()
+                              end
+                           end)
+                           pulseOut.Completed:Connect(function()
+                              if indicator.Parent then
+                                 pulseIn:Play()
+                              end
+                           end)
+                           pulseIn:Play()
+                           
+                           _G.JumpingIndicators[p.Name] = billboardGui
+                        end
+                     else
+                        -- Remove indicator if player is not jumping
+                        if _G.JumpingIndicators[p.Name] and _G.JumpingIndicators[p.Name].Parent then
+                           _G.JumpingIndicators[p.Name]:Destroy()
+                           _G.JumpingIndicators[p.Name] = nil
+                        end
+                     end
+                  end
+               end
+               
+               -- Wait before next update (faster update for jumping)
+               wait(0.1)
+            end
+         end)
+      end
+   end,
+})
+
+-- Add slider for jumping indicator size
+local JumpingIndicatorSizeSlider = JumpingIndicator:CreateSlider("JumpingIndicatorSizeSlider", {
+   Title = "Jumping Indicator Size",
+   Min = 20,
+   Max = 100,
+   Value = 50,
+   Increment = 5,
+   Callback = function(Value)
+      _G.JumpingIndicatorSize = Value
+      
+      -- Update existing indicators immediately
+      for playerName, indicator in pairs(_G.JumpingIndicators) do
+         if indicator and indicator.Parent then
+            indicator.Size = UDim2.new(0, Value, 0, Value)
          end
       end
    end,
