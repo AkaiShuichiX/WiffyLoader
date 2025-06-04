@@ -1,8 +1,9 @@
 -- Wiffy Hub - Volleyball Legends
--- Created using Rayfield UI Library
-
--- Load the Rayfield library
-local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/UI-Interface/CustomFIeld/main/RayField.lua'))()
+-- Created using Twilight UI Library
+-- Load the Twilight library and addons
+local Library = loadstring(game:HttpGet('https://raw.githubusercontent.com/AkaiShuichiX/Twilight/refs/heads/main/Library.lua'))()
+local ThemeManager = loadstring(game:HttpGet('https://raw.githubusercontent.com/AkaiShuichiX/Twilight/refs/heads/main/addons/ThemeManager.lua'))()
+local SaveManager = loadstring(game:HttpGet('https://raw.githubusercontent.com/AkaiShuichiX/Twilight/refs/heads/main/addons/SaveManager.lua'))()
 
 -- Services
 local Players = game:GetService("Players")
@@ -10,78 +11,54 @@ local RunService = game:GetService("RunService")
 local UserGameSettings = UserSettings():GetService("UserGameSettings")
 
 -- Local variables
-local Window = nil
-local MainTab = nil
-local HitboxSection = nil
-local HitboxToggle = nil
-local HitboxSizeSlider = nil
-local HitboxTransparencySlider = nil
-local PlayerHitboxSection = nil
-local PlayerHitboxShowToggle = nil
-local PlayerHitboxTransparencySlider = nil
-local CharacterRotationSection = nil
-local CharacterRotationToggle = nil
-local AnimationRemovalSection = nil
-local AnimationRemovalToggle = nil
-local JumpPowerSection = nil
-local JumpPowerSlider = nil
-local PlayerDirectionSection = nil
-local PlayerDirectionToggle = nil
 local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
--- Create the main window
-Window = Rayfield:CreateWindow({
-   Name = "Wiffy Hub - Volleyball Legends",
-   LoadingTitle = "Wiffy Hub",
-   LoadingSubtitle = "by Wiffy",
-   ConfigurationSaving = {
-      Enabled = true,
-      FolderName = nil, -- Creates a custom folder for your hub/game
-      FileName = "WiffyHub_VolleyballLegends"
-   },
-   Discord = {
-      Enabled = false,
-      Invite = "", -- Discord invite code
-      RememberJoins = true
-   },
-   KeySystem = false,
-   KeySettings = {
-      Title = "Wiffy Hub",
-      Subtitle = "Volleyball Legends",
-      Note = "Key: Dick",
-      FileName = "WiffyKey",
-      SaveKey = true,
-      GrabKeyFromSite = false,
-      Key = {"Dick"}
-   }
-})
-
--- Create main tab
-MainTab = Window:CreateTab("Main")
-
--- Global variables for hitbox management
+-- Initialize global variables
 _G.HitboxEnabled = false
 _G.HitboxSize = 1
-_G.HitboxTransparency = 0.5 -- Changed from TransparencyValue to HitboxTransparency
+_G.HitboxTransparency = 0.5
 _G.OriginalSizes = {}
 _G.OriginalTransparency = {}
 _G.OriginalHitboxParts = {}
 _G.CustomHitboxParts = {}
-
--- Global variables for player hitbox show
 _G.PlayerHitboxShowEnabled = false
 _G.PlayerHitboxTransparency = 0.5
-
--- Global variable for animation removal
 _G.RemoveAnimationsEnabled = false
-
--- Global variable for JumpPower
 _G.JumpPowerMultiplier = 1
-
--- Global variable for Player Direction Visualization
 _G.PlayerDirectionEnabled = false
 _G.DirectionLines = {}
+
+-- Create the main window
+local Window = Library:CreateWindow({
+    Title = "Wiffy Hub - Volleyball Legends",
+    TopTabBar = true,
+    ToggleKeybind = Enum.KeyCode.RightShift,
+    Width = 500,
+    Height = 500,
+ 
+    --[[Default:
+         Title = "Template",
+         TopTabBar = false,
+         OutlineThickness = 2,
+         Width = 700,
+         Height = 700,
+         Font = Font.fromEnum(Enum.Font.Code),
+         FontSize = 16,
+         SectionFontSize = 18,
+         SectionTitleTransparency = 0.5,
+         ElementTitleTransparency = 0.5,
+         MaxDialogButtonsPerLine = 4,
+         MaxDropdownItems = 8,
+         Theme = nil,
+         TweenTime = 0.1,
+         ToggleKeybind = Enum.KeyCode.RightControl,
+     ]]
+})
+
+-- Create tabs
+local MainTab = Window:CreateTab("Main", "home")
+local Settings = Window:CreateTab("Settings")
 
 -- Function declarations
 local function isShiftLockEnabled() 
@@ -170,14 +147,13 @@ function resetAllHitboxes()
 end
 
 -- Add a section for Hitbox modification
-HitboxSection = MainTab:CreateSection("Hitbox Modification")
+local HitboxSection = MainTab:CreateSection("Hitbox Modification")
 
 -- Add a toggle for hitbox modification
-HitboxToggle = MainTab:CreateToggle({
-   Name = "Hitbox Modification",
-   Info = "Enables/Disables hitbox modification for all CLIENT_BALL models",
-   CurrentValue = false,
-   Flag = "HitboxToggle",
+local HitboxToggle = HitboxSection:CreateToggle("HitboxToggle", {
+   Title = "Hitbox Modification",
+   Description = "Enables/Disables hitbox modification for Ball",
+   Default = false,
    Callback = function(Value)
       _G.HitboxEnabled = Value
       
@@ -244,42 +220,38 @@ HitboxToggle = MainTab:CreateToggle({
 })
 
 -- Add a slider for hitbox size
-HitboxSizeSlider = MainTab:CreateSlider({
-   Name = "Hitbox Size Multiplier",
-   Info = "Adjusts the size of all CLIENT_BALL hitboxes",
-   Range = {0.1, 30},
+local HitboxSizeSlider = HitboxSection:CreateSlider("HitboxSizeSlider", {
+   Title = "Hitbox Size Multiplier",
+   Min = 0.1,
+   Max = 30,
+   Value = 1,
    Increment = 0.1,
    Suffix = "x",
-   CurrentValue = 1,
-   Flag = "HitboxSizeSlider",
    Callback = function(Value)
       _G.HitboxSize = Value
    end,
 })
 
 -- Add a slider for hitbox transparency
-HitboxTransparencySlider = MainTab:CreateSlider({
-   Name = "Hitbox Transparency",
-   Info = "Adjusts the transparency of custom hitbox parts",
-   Range = {0, 1},
+local HitboxTransparencySlider = HitboxSection:CreateSlider("HitboxTransparencySlider", {
+   Title = "Hitbox Transparency",
+   Min = 0,
+   Max = 1,
+   Value = 0.5,
    Increment = 0.1,
-   Suffix = "",
-   CurrentValue = 0.5,
-   Flag = "HitboxTransparencySlider",
    Callback = function(Value)
       _G.HitboxTransparency = Value
    end,
 })
 
 -- Add a section for PlayerHitboxShow
-PlayerHitboxSection = MainTab:CreateSection("Player Hitbox Show")
+local PlayerHitboxSection = MainTab:CreateSection("Player Hitbox Show")
 
 -- Add a toggle for player hitbox show
-PlayerHitboxShowToggle = MainTab:CreateToggle({
-   Name = "Show PlayerHitbox",
-   Info = "Makes workspace.Part visible and warps it to CLIENT_BALL models",
-   CurrentValue = false,
-   Flag = "PlayerHitboxShowToggle",
+local PlayerHitboxShowToggle = PlayerHitboxSection:CreateToggle("PlayerHitboxShowToggle", {
+   Title = "Show PlayerHitbox",
+   Description = "Enables/Disables showing PlayerHitbox",
+   Default = false,
    Callback = function(Value)
       _G.PlayerHitboxShowEnabled = Value
       
@@ -335,27 +307,25 @@ PlayerHitboxShowToggle = MainTab:CreateToggle({
 })
 
 -- Add a slider for player hitbox transparency
-PlayerHitboxTransparencySlider = MainTab:CreateSlider({
-   Name = "PlayerHitbox Transparency",
-   Range = {0, 1},
+local PlayerHitboxTransparencySlider = PlayerHitboxSection:CreateSlider("PlayerHitboxTransparencySlider", {
+   Title = "PlayerHitbox Transparency",
+   Min = 0,
+   Max = 1,
+   Value = 0.5,
    Increment = 0.1,
-   Suffix = "",
-   CurrentValue = 0.5,
-   Flag = "PlayerHitboxTransparencySlider",
    Callback = function(Value)
       _G.PlayerHitboxTransparency = Value
    end,
 })
 
 -- Add a section for Character Rotation
-CharacterRotationSection = MainTab:CreateSection("Force ShiftLock")
+local CharacterRotationSection = MainTab:CreateSection("Force ShiftLock")
 
 -- Add a toggle for character rotation
-CharacterRotationToggle = MainTab:CreateToggle({
-   Name = "Force ShiftLock",
-   Info = "Makes your character face the direction your camera is looking when ShiftLock is enabled",
-   CurrentValue = false,
-   Flag = "CharacterRotationToggle",
+local CharacterRotationToggle = CharacterRotationSection:CreateToggle("CharacterRotationToggle", {
+   Title = "Force ShiftLock",
+   Description = "Enables/Disables force ShiftLock rotation",
+   Default = false,
    Callback = function(Value)
       if Value then
          -- Connect the rotation function
@@ -380,14 +350,13 @@ CharacterRotationToggle = MainTab:CreateToggle({
 })
 
 -- Add a section for Animation Removal
-AnimationRemovalSection = MainTab:CreateSection("Animation Removal")
+local AnimationRemovalSection = MainTab:CreateSection("Animation Removal")
 
 -- Add a toggle for animation removal
-AnimationRemovalToggle = MainTab:CreateToggle({
-   Name = "Remove All Animations",
-   Info = "Continuously removes all animations from your character every 0.1 seconds",
-   CurrentValue = false,
-   Flag = "AnimationRemovalToggle",
+local AnimationRemovalToggle = AnimationRemovalSection:CreateToggle("AnimationRemovalToggle", {
+   Title = "Remove All Animations",
+   Description = "Enables/Disables removal of all animations",
+   Default = false,
    Callback = function(Value)
       _G.RemoveAnimationsEnabled = Value
       
@@ -420,17 +389,17 @@ AnimationRemovalToggle = MainTab:CreateToggle({
 })
 
 -- Add a section for JumpPower
-JumpPowerSection = MainTab:CreateSection("Jump Power")
+local JumpPowerSection = MainTab:CreateSection("Jump Power")
 
 -- Add a slider for JumpPower
-JumpPowerSlider = MainTab:CreateSlider({
-   Name = "Jump Power Multiplier",
-   Info = "Adjusts your character's jump power",
-   Range = {0, 5},
+local JumpPowerSlider = JumpPowerSection:CreateSlider("JumpPowerSlider", {
+   Title = "Jump Power Multiplier",
+   Description = "Adjusts your character's jump power",
+   Min = 0,
+   Max = 5,
+   Value = player:GetAttribute("GameJumpPowerMultiplier") or 1,
    Increment = 0.05,
    Suffix = "x",
-   CurrentValue = player:GetAttribute("GameJumpPowerMultiplier") or 1,
-   Flag = "JumpPowerSlider",
    Callback = function(Value)
       _G.JumpPowerMultiplier = Value
       local player = game:GetService("Players").LocalPlayer
@@ -441,13 +410,12 @@ JumpPowerSlider = MainTab:CreateSlider({
 })
 
 -- Add a section for Player Direction Visualization
-PlayerDirectionSection = MainTab:CreateSection("Enemy Direction Visualization")
+local PlayerDirectionSection = MainTab:CreateSection("Enemy Direction Visualization")
 
-PlayerDirectionToggle = MainTab:CreateToggle({
-   Name = "Show Enemy Direction",
-   Info = "Creates a colored line in front of enemy players to show where they are looking",
-   CurrentValue = false,
-   Flag = "PlayerDirectionToggle",
+local PlayerDirectionToggle = PlayerDirectionSection:CreateToggle("PlayerDirectionToggle", {
+   Title = "Show Enemy Direction",
+   Description = "Enables/Disables enemy direction visualization",
+   Default = false,
    Callback = function(Value)
       _G.PlayerDirectionEnabled = Value
       
@@ -481,7 +449,7 @@ PlayerDirectionToggle = MainTab:CreateToggle({
                
                -- Create or update direction lines for enemy players only
                for _, p in pairs(Players:GetPlayers()) do
-                  -- Skip local player and only show opposite team players
+                  -- Skip local player
                   if p ~= player then
                      local character = p.Character
                      local localCharacter = player.Character
@@ -491,28 +459,40 @@ PlayerDirectionToggle = MainTab:CreateToggle({
                         local localPosition = localCharacter.HumanoidRootPart.Position
                         local enemyPosition = character.HumanoidRootPart and character.HumanoidRootPart.Position
                         
-                        -- Check if enemy is on opposite side (simple distance-based check)
-                        if enemyPosition and (localPosition - enemyPosition).Magnitude > 10 then
-                           -- Create line if it doesn't exist
-                           if not _G.DirectionLines[p.Name] or not _G.DirectionLines[p.Name].Parent then
-                              local line = Instance.new("Part")
+                        -- Check if player is on opposite team or if show same team is enabled
+                        local isSameTeam = false
+                        if p.Team and player.Team then
+                           isSameTeam = (p.Team == player.Team)
+                        elseif (localPosition - enemyPosition).Magnitude <= 10 then
+                           -- Use distance as a fallback for team detection
+                           isSameTeam = true
+                        end
+                        
+                        local shouldShowLine = (_G.ShowSameTeam or not isSameTeam)
+                        
+                        if enemyPosition and shouldShowLine then
+                           -- Create line if it doesn't exist or update existing one
+                           local line = _G.DirectionLines[p.Name]
+                           
+                           -- Determine team color based on player's team (always update color)
+                           local teamColor = Color3.fromRGB(255, 0, 0) -- Default red
+                           if p.Team then
+                              teamColor = p.Team.TeamColor.Color
+                           elseif p:FindFirstChild("TeamColor") then
+                              teamColor = p.TeamColor.Value
+                           elseif character:FindFirstChild("Body Colors") then
+                              -- Use torso color as team indicator
+                              teamColor = character["Body Colors"].TorsoColor3
+                           end
+                           
+                           if not line or not line.Parent then
+                              -- Create new line
+                              line = Instance.new("Part")
                               line.Name = "EnemyDirectionLine_" .. p.Name
                               line.Anchored = false
                               line.CanCollide = false
                               line.Material = Enum.Material.Neon
                               
-                              -- Determine team color based on player's team
-                              local teamColor = Color3.fromRGB(255, 0, 0) -- Default red
-                              if p.Team then
-                                 teamColor = p.Team.TeamColor.Color
-                              elseif p:FindFirstChild("TeamColor") then
-                                 teamColor = p.TeamColor.Value
-                              elseif character:FindFirstChild("Body Colors") then
-                                 -- Use torso color as team indicator
-                                 teamColor = character["Body Colors"].TorsoColor3
-                              end
-                              
-                              line.Color = teamColor
                               -- Use global direction line length variable
                               local lineLength = _G.DirectionLineLength or 20
                               line.Size = Vector3.new(0.15, 0.15, lineLength)
@@ -532,8 +512,11 @@ PlayerDirectionToggle = MainTab:CreateToggle({
                               
                               _G.DirectionLines[p.Name] = line
                            end
+                           
+                           -- Always update color in case team changed
+                           line.Color = teamColor
                         else
-                           -- Remove line if player is too close (same team)
+                           -- Remove line if player is not supposed to be shown
                            if _G.DirectionLines[p.Name] and _G.DirectionLines[p.Name].Parent then
                               _G.DirectionLines[p.Name]:Destroy()
                               _G.DirectionLines[p.Name] = nil
@@ -548,140 +531,109 @@ PlayerDirectionToggle = MainTab:CreateToggle({
             end
          end)
       end
+   end,
+})
+
+-- Add toggle for showing same team players
+local SameTeamToggle = PlayerDirectionSection:CreateToggle("SameTeamToggle", {
+   Title = "Show Same Team Direction",
+   Default = false,
+   Callback = function(Value)
+      _G.ShowSameTeam = Value
+      
+      -- Clean up existing direction lines to force refresh
+      for _, line in pairs(_G.DirectionLines) do
+         if line and line.Parent then
+            line:Destroy()
+         end
+      end
+      _G.DirectionLines = {}
    end,
 })
 
 -- Add slider for direction line length
-DirectionLengthSlider = MainTab:CreateSlider({
-   Name = "Direction Line Length",
-   Info = "Adjust the length of enemy direction lines",
-   Range = {5, 50},
+local DirectionLengthSlider = PlayerDirectionSection:CreateSlider("DirectionLengthSlider", {
+   Title = "Direction Line Length",
+   Min = 5,
+   Max = 50,
+   Value = 20,
    Increment = 1,
-   CurrentValue = 20,
-   Flag = "DirectionLengthSlider",
    Callback = function(Value)
       _G.DirectionLineLength = Value
       
-      -- Update existing lines
+      -- Update existing lines by recreating them to avoid weld conflicts
       for playerName, line in pairs(_G.DirectionLines) do
          if line and line.Parent then
-            line.Size = Vector3.new(0.15, 0.15, Value)
-            -- Adjust position based on new length
             local character = line.Parent
-            if character and character:FindFirstChild("Head") then
-               line.CFrame = character.Head.CFrame * CFrame.new(0, 0, -Value/2)
-            end
-         end
-      end
-      
-      -- Restart the direction visualization if it's currently enabled
-      if _G.PlayerDirectionEnabled then
-         -- Clean up existing lines
-         for _, line in pairs(_G.DirectionLines) do
-            if line and line.Parent then
+            local head = character:FindFirstChild("Head")
+            
+            if head then
+               -- Store the line color before destroying
+               local lineColor = line.Color
+               
+               -- Destroy the old line
                line:Destroy()
+               
+               -- Create new line with updated size
+               local newLine = Instance.new("Part")
+               newLine.Name = "EnemyDirectionLine_" .. playerName
+               newLine.Anchored = false
+               newLine.CanCollide = false
+               newLine.Material = Enum.Material.Neon
+               newLine.Color = lineColor
+               newLine.Size = Vector3.new(0.15, 0.15, Value)
+               newLine.Transparency = 0.15
+               
+               -- Parent to character
+               newLine.Parent = character
+               
+               -- Position the line based on new length
+               newLine.CFrame = head.CFrame * CFrame.new(0, 0, -Value/2)
+               
+               -- Create new WeldConstraint
+               local weld = Instance.new("WeldConstraint")
+               weld.Part0 = head
+               weld.Part1 = newLine
+               weld.Parent = newLine
+               
+               -- Update the reference
+               _G.DirectionLines[playerName] = newLine
             end
          end
-         _G.DirectionLines = {}
-         
-         -- Restart the toggle functionality
-         _G.PlayerDirectionEnabled = false
-         wait(0.1) -- Small delay to ensure cleanup
-         _G.PlayerDirectionEnabled = true
-         
-         -- Restart the enemy direction visualization loop
-         spawn(function()
-            while _G.PlayerDirectionEnabled do
-               -- Remove lines for players who left
-               for playerName, line in pairs(_G.DirectionLines) do
-                  local playerStillExists = false
-                  for _, p in pairs(Players:GetPlayers()) do
-                     if p.Name == playerName and p ~= player then
-                        playerStillExists = true
-                        break
-                     end
-                  end
-                  
-                  if not playerStillExists and line and line.Parent then
-                     line:Destroy()
-                     _G.DirectionLines[playerName] = nil
-                  end
-               end
-               
-               -- Create or update direction lines for enemy players only
-               for _, p in pairs(Players:GetPlayers()) do
-                  -- Skip local player and only show opposite team players
-                  if p ~= player then
-                     local character = p.Character
-                     local localCharacter = player.Character
-                     
-                     if character and character:FindFirstChild("Head") and localCharacter and localCharacter:FindFirstChild("HumanoidRootPart") then
-                        local head = character.Head
-                        local localPosition = localCharacter.HumanoidRootPart.Position
-                        local enemyPosition = character.HumanoidRootPart and character.HumanoidRootPart.Position
-                        
-                        -- Check if enemy is on opposite side (simple distance-based check)
-                        if enemyPosition and (localPosition - enemyPosition).Magnitude > 10 then
-                           -- Create line if it doesn't exist
-                           if not _G.DirectionLines[p.Name] or not _G.DirectionLines[p.Name].Parent then
-                              local line = Instance.new("Part")
-                              line.Name = "EnemyDirectionLine_" .. p.Name
-                              line.Anchored = false
-                              line.CanCollide = false
-                              line.Material = Enum.Material.Neon
-                              
-                              -- Determine team color based on player's team
-                              local teamColor = Color3.fromRGB(255, 0, 0) -- Default red
-                              if p.Team then
-                                 teamColor = p.Team.TeamColor.Color
-                              elseif p:FindFirstChild("TeamColor") then
-                                 teamColor = p.TeamColor.Value
-                              elseif character:FindFirstChild("Body Colors") then
-                                 -- Use torso color as team indicator
-                                 teamColor = character["Body Colors"].TorsoColor3
-                              end
-                              
-                              line.Color = teamColor
-                              -- Use updated direction line length
-                              local lineLength = _G.DirectionLineLength or 20
-                              line.Size = Vector3.new(0.15, 0.15, lineLength)
-                              line.Transparency = 0.15
-                              
-                              -- Parent directly to character
-                              line.Parent = character
-                              
-                              -- Position the line based on its length
-                              line.CFrame = head.CFrame * CFrame.new(0, 0, -lineLength/2)
-                              
-                              -- Create WeldConstraint to attach line to head
-                              local weld = Instance.new("WeldConstraint")
-                              weld.Part0 = head
-                              weld.Part1 = line
-                              weld.Parent = line
-                              
-                              _G.DirectionLines[p.Name] = line
-                           end
-                        else
-                           -- Remove line if player is too close (same team)
-                           if _G.DirectionLines[p.Name] and _G.DirectionLines[p.Name].Parent then
-                              _G.DirectionLines[p.Name]:Destroy()
-                              _G.DirectionLines[p.Name] = nil
-                           end
-                        end
-                     end
-                  end
-               end
-               
-               -- Wait before next update
-               wait(0.3)
-            end
-         end)
       end
    end,
 })
 
--- Add a paragraph with credits
-MainTab:CreateParagraph({Title = "Credits", Content = "Wiffy Hub created by Wiffy\nUI Library: Rayfield"})
+-- Create toggle keybind in settings
+local MenuSec = Settings:CreateSection("Menu")
+local ToggleKeypicker = MenuSec:CreateKeypicker("ToggleKeybind", {
+   Title = "Toggle Keybind",
+   Keybind = Library.ToggleKeybind
+})
 
--- Load saved configuration
-Rayfield:LoadConfiguration()
+-- Create unload button
+MenuSec:CreateButton("UnloadButton", {
+   Title = "Unload",
+   Callback = function()
+      Library:Unload()
+   end
+})
+
+-- Set toggle keybind and unload handler
+Library.ToggleKeybind = ToggleKeypicker
+
+-- Setup theme manager and save manager
+ThemeManager:SetLibrary(Library)
+SaveManager:SetLibrary(Library)
+
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({ "MenuKeybind" })
+
+ThemeManager:ApplyToTab(Settings)
+SaveManager:ApplyToTab(Settings)
+
+SaveManager:LoadAutoloadConfig()
+
+Library:OnUnload(function()
+	print("Unloading UI Library")
+end)
